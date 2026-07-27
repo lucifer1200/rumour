@@ -13,7 +13,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -31,45 +34,28 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForWeb',
-    appId: '1:000000000000:web:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'rumour-demo',
-    authDomain: 'rumour-demo.firebaseapp.com',
-    databaseURL: 'https://rumour-demo.firebaseio.com',
-    storageBucket: 'rumour-demo.appspot.com',
-    measurementId: 'G-XXXXXXXXXX',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForAndroid',
-    appId: '1:000000000000:android:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'rumour-demo',
-    databaseURL: 'https://rumour-demo.firebaseio.com',
-    storageBucket: 'rumour-demo.appspot.com',
+    apiKey: 'AIzaSyAXk9SpM46qSoJVm18vtwyxqN75D2RpAZg',
+    appId: '1:274620698968:android:7fb53ccd5a95c098e5552d',
+    messagingSenderId: '274620698968',
+    projectId: 'fir-791ec',
+    storageBucket: 'fir-791ec.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForIOS',
-    appId: '1:000000000000:ios:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'rumour-demo',
-    databaseURL: 'https://rumour-demo.firebaseio.com',
-    storageBucket: 'rumour-demo.appspot.com',
-    iosClientId: '000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com',
+    apiKey: 'AIzaSyAXk9SpM46qSoJVm18vtwyxqN75D2RpAZg',
+    appId: '1:274620698968:ios:placeholder',
+    messagingSenderId: '274620698968',
+    projectId: 'fir-791ec',
+    storageBucket: 'fir-791ec.firebasestorage.app',
     iosBundleId: 'com.voiceclub.rumour',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForMacOS',
-    appId: '1:000000000000:macos:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'rumour-demo',
-    databaseURL: 'https://rumour-demo.firebaseio.com',
-    storageBucket: 'rumour-demo.appspot.com',
-    iosClientId: '000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com',
-    iosBundleId: 'com.voiceclub.rumour',
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAXk9SpM46qSoJVm18vtwyxqN75D2RpAZg',
+    appId: '1:274620698968:web:placeholder',
+    messagingSenderId: '274620698968',
+    projectId: 'fir-791ec',
+    storageBucket: 'fir-791ec.firebasestorage.app',
   );
 }

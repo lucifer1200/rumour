@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'package:rumour/models/index.dart';
-import 'package:rumour/services/firestore_service.dart';
+
+import '../services/firestore_service.dart';
 
 class RoomRepository {
   final FirestoreService _firestoreService;
@@ -54,11 +56,11 @@ class RoomRepository {
   /// Generates a random 4-6 character room code
   String _generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = DateTime.now().microsecond.toString().hashCode.abs();
-    final length = 4 + (random % 3); // 4-6 characters
+    final rng = Random();
+    final length = 4 + rng.nextInt(3);
     String code = '';
     for (int i = 0; i < length; i++) {
-      code += chars[random + i * 7 % chars.length];
+      code += chars[rng.nextInt(chars.length)];
     }
     return code;
   }

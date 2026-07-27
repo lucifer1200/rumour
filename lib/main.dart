@@ -10,8 +10,12 @@ import 'package:rumour/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await LocalStorageService.init();
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await LocalStorageService.init();
+  } catch (e) {
+    debugPrint('Init error: $e');
+  }
   runApp(const RumourApp());
 }
 
@@ -23,12 +27,10 @@ class RumourApp extends StatelessWidget {
     // Initialize services
     final randomUserService = RandomUserService();
     final firestoreService = FirestoreService();
-    final localStorageService = LocalStorageService();
 
     // Create repositories
     final userRepo = UserRepository(
       randomUserService: randomUserService,
-      localStorageService: localStorageService,
     );
     final roomRepo = RoomRepository(firestoreService: firestoreService);
     final msgRepo = MessageRepository(firestoreService: firestoreService);

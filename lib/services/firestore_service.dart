@@ -5,13 +5,7 @@ class FirestoreService {
   final FirebaseFirestore _db;
 
   FirestoreService({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance {
-    // Enable offline persistence
-    _db.settings = const Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    );
-  }
+      : _db = firestore ?? FirebaseFirestore.instance;
 
   /// Creates a new room with a unique code
   Future<String> createRoom(String code) async {
@@ -98,8 +92,7 @@ class FirestoreService {
     try {
       return _db.collection('rooms').doc(roomId).snapshots().map((snapshot) {
         if (!snapshot.exists) return null;
-        final room = Room.fromJson(snapshot.data() as Map<String, dynamic>);
-        return room;
+        return Room.fromJson(snapshot.data() as Map<String, dynamic>, snapshot.id);
       });
     } catch (e) {
       throw Exception('Failed to subscribe to room: $e');
@@ -111,7 +104,7 @@ class FirestoreService {
     try {
       final doc = await _db.collection('rooms').doc(roomId).get();
       if (!doc.exists) return null;
-      return Room.fromJson(doc.data() as Map<String, dynamic>);
+      return Room.fromJson(doc.data() as Map<String, dynamic>, doc.id);
     } catch (e) {
       throw Exception('Failed to get room: $e');
     }

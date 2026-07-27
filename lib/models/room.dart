@@ -13,10 +13,10 @@ class Room {
     this.lastMessage,
   });
 
-  factory Room.fromJson(Map<String, dynamic> json) {
+  factory Room.fromJson(Map<String, dynamic> json, String docId) {
     return Room(
-      id: json['id'] as String,
-      code: json['code'] as String,
+      id: docId,
+      code: json['code'] as String? ?? '',
       createdAt: (json['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
       memberCount: json['memberCount'] as int? ?? 0,
       lastMessage: json['lastMessage'] as String?,

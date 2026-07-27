@@ -1,4 +1,4 @@
-package com.voiceclub.rumour.rumour
+package com.voiceclub.rumour
 
 import io.flutter.embedding.android.FlutterActivity
 

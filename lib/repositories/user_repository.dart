@@ -1,22 +1,18 @@
 import 'package:uuid/uuid.dart';
 import 'package:rumour/models/index.dart';
 import 'package:rumour/services/index.dart';
-import 'dart:io';
 
 class UserRepository {
   final RandomUserService _randomUserService;
-  final LocalStorageService _localStorageService;
 
   UserRepository({
     required RandomUserService randomUserService,
-    required LocalStorageService localStorageService,
-  })  : _randomUserService = randomUserService,
-        _localStorageService = localStorageService;
+  })  : _randomUserService = randomUserService;
 
   /// Gets or creates a user identity for a room
   Future<User> getOrCreateUserIdentity(String roomId) async {
     // Check if user already exists locally for this room
-    final existingUser = await _localStorageService.getUserIdentity(roomId);
+    final existingUser = await LocalStorageService.getUserIdentity(roomId);
     if (existingUser != null) {
       return existingUser;
     }
@@ -34,18 +30,18 @@ class UserRepository {
     );
 
     // Save to local storage
-    await _localStorageService.saveUserIdentity(roomId, user);
+    await LocalStorageService.saveUserIdentity(roomId, user);
     return user;
   }
 
   /// Gets the stored user identity for a room (returns null if not found)
   Future<User?> getUserIdentity(String roomId) async {
-    return await _localStorageService.getUserIdentity(roomId);
+    return await LocalStorageService.getUserIdentity(roomId);
   }
 
   /// Clears user identity for a room
   Future<void> clearUserIdentity(String roomId) async {
-    await _localStorageService.clearRoom(roomId);
+    await LocalStorageService.clearRoom(roomId);
   }
 
   /// Gets a device-specific identifier

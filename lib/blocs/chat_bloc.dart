@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rumour/models/message.dart';
 import 'package:rumour/repositories/message_repository.dart';
@@ -7,22 +8,25 @@ part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final MessageRepository messageRepository;
+  StreamSubscription<List<Message>>? _msgSub;
 
   ChatBloc(this.messageRepository) : super(ChatInitial()) {
     on<LoadMessages>(_onLoadMessages);
     on<SendMessage>(_onSendMessage);
+    on<_MessagesUpdated>(_onMessagesUpdated);
   }
 
-  Future<void> _onLoadMessages(LoadMessages event, Emitter<ChatState> emit) async {
+  void _onLoadMessages(LoadMessages event, Emitter<ChatState> emit) {
     emit(ChatLoading());
-    try {
-      final messagesStream = messageRepository.getMessagesStream(event.roomId);
-      await for (var messages in messagesStream) {
-        emit(ChatLoaded(messages));
-      }
-    } catch (e) {
-      emit(ChatError('Failed to load messages: $e'));
-    }
+    _msgSub?.cancel();
+    _msgSub = messageRepository.getMessagesStream(event.roomId).listen(
+      (messages) => add(_MessagesUpdated(messages)),
+      onError: (e) => add(_MessagesUpdated(const [])),
+    );
+  }
+
+  void _onMessagesUpdated(_MessagesUpdated event, Emitter<ChatState> emit) {
+    emit(ChatLoaded(event.messages));
   }
 
   Future<void> _onSendMessage(SendMessage event, Emitter<ChatState> emit) async {
@@ -34,10 +38,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         userAvatar: event.userAvatar,
         text: event.text,
       );
-      // Re-load messages after sending
-      add(LoadMessages(event.roomId));
     } catch (e) {
       emit(ChatError('Failed to send message: $e'));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _msgSub?.cancel();
+    return super.close();
   }
 }

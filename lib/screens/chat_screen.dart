@@ -4,7 +4,6 @@ import 'package:rumour/blocs/index.dart';
 import 'package:rumour/models/message.dart';
 import 'package:rumour/theme/app_colors.dart';
 import 'package:rumour/widgets/index.dart';
-import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final String roomId;
@@ -18,21 +17,11 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _scrollCtrl = ScrollController();
   final _msgCtrl = TextEditingController();
-  late String _userId;
-  late String _userName;
-  late String _userAvatar;
 
   @override
   void initState() {
     super.initState();
     context.read<ChatBloc>().add(LoadMessages(widget.roomId));
-    // Get user from UserBloc state
-    final userState = context.read<UserBloc>().state;
-    if (userState is UserLoaded) {
-      _userId = userState.user.id;
-      _userName = userState.user.name;
-      _userAvatar = userState.user.avatar;
-    }
   }
 
   @override
@@ -54,13 +43,13 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _sendMsg(String text) {
+  void _sendMsg(String text, String userId, String userName, String userAvatar) {
     if (text.trim().isEmpty) return;
     context.read<ChatBloc>().add(SendMessage(
       roomId: widget.roomId,
-      userId: _userId,
-      userName: _userName,
-      userAvatar: _userAvatar,
+      userId: userId,
+      userName: userName,
+      userAvatar: userAvatar,
       text: text,
     ));
     _msgCtrl.clear();
@@ -69,130 +58,146 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.darkBackground,
-      body: Column(
-        children: [
-          // Simple header
-          Container(
-            color: AppColors.darkSurface,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
+    return BlocBuilder<UserBloc, UserState>(
+      builder: (context, userState) {
+        if (userState is! UserLoaded) {
+          return const Scaffold(
+            backgroundColor: AppColors.darkBackground,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final user = userState.user;
+
+        return Scaffold(
+          backgroundColor: AppColors.darkBackground,
+          body: Column(
+            children: [
+              Container(
+                color: AppColors.darkSurface,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SafeArea(
+                  bottom: false,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Room #${widget.roomId.substring(0, 4)}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'You are ${user.name}',
+                              style: TextStyle(
+                                  fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Room #${widget.roomId.substring(0, 4)}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('Anonymous chat',
-                            style: TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          // Messages
-          Expanded(
-            child: BlocBuilder<ChatBloc, ChatState>(
-              builder: (context, state) {
-                if (state is ChatLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is ChatError) {
-                  return Center(child: Text(state.message));
-                }
-
-                List<Message> messages = [];
-                if (state is ChatLoaded) {
-                  messages = state.messages;
-                } else if (state is MessageSent) {
-                  messages = state.messages;
-                }
-
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text('No messages yet.\nStart talking!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textSecondary)),
-                  );
-                }
-
-                // Group by date
-                final grouped = _groupByDate(messages);
-
-                return ListView.builder(
-                  controller: _scrollCtrl,
-                  itemCount: grouped.length,
-                  itemBuilder: (_, idx) {
-                    final item = grouped[idx];
-                    if (item is DateTime) {
-                      return DateSeparator(date: item);
+              Expanded(
+                child: BlocBuilder<ChatBloc, ChatState>(
+                  builder: (context, state) {
+                    if (state is ChatLoading) {
+                      return const Center(child: CircularProgressIndicator());
                     }
-                    final msg = item as Message;
-                    return MessageBubble(
-                      message: msg,
-                      isOwnMessage: msg.userId == _userId,
+
+                    if (state is ChatError) {
+                      return Center(child: Text(state.message));
+                    }
+
+                    List<Message> messages = [];
+                    if (state is ChatLoaded) {
+                      messages = state.messages;
+                    }
+
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No messages yet.\nStart talking!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+
+                    final grouped = _groupByDate(messages);
+
+                    return ListView.builder(
+                      controller: _scrollCtrl,
+                      itemCount: grouped.length,
+                      itemBuilder: (_, idx) {
+                        final item = grouped[idx];
+                        if (item is DateTime) {
+                          return DateSeparator(date: item);
+                        }
+                        final msg = item as Message;
+                        return MessageBubble(
+                          message: msg,
+                          isOwnMessage: msg.userId == user.id,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
-          // Input
-          Container(
-            color: AppColors.darkBackground,
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgCtrl,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
-                      filled: true,
-                      fillColor: AppColors.darkSurfaceVariant,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: const BorderSide(color: AppColors.border),
+                ),
+              ),
+              Container(
+                color: AppColors.darkBackground,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _msgCtrl,
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Type a message',
+                          hintStyle: TextStyle(color: AppColors.textSecondary),
+                          filled: true,
+                          fillColor: AppColors.darkSurfaceVariant,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                        ),
+                        onSubmitted: (text) =>
+                            _sendMsg(text, user.id, user.name, user.avatar),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
                     ),
-                    onSubmitted: (text) => _sendMsg(text),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _sendMsg(_msgCtrl.text),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
-                      shape: BoxShape.circle,
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _sendMsg(
+                          _msgCtrl.text, user.id, user.name, user.avatar),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check,
+                            color: AppColors.ownMessageText, size: 20),
+                      ),
                     ),
-                    child: Icon(Icons.check,
-                        color: AppColors.ownMessageText, size: 20),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

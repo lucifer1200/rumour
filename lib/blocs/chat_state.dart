@@ -15,8 +15,3 @@ class ChatError extends ChatState {
   final String message;
   ChatError(this.message);
 }
-
-class MessageSent extends ChatState {
-  final List<Message> messages;
-  MessageSent(this.messages);
-}

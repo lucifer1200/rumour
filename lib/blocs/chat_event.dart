@@ -22,3 +22,8 @@ class SendMessage extends ChatEvent {
     required this.text,
   });
 }
+
+class _MessagesUpdated extends ChatEvent {
+  final List<Message> messages;
+  _MessagesUpdated(this.messages);
+}

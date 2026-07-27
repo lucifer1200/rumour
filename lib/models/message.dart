@@ -19,14 +19,14 @@ class Message {
     this.hidden = false,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json, String messageId) {
+  factory Message.fromJson(Map<String, dynamic> json, String messageId, {String roomId = ''}) {
     return Message(
       id: messageId,
-      roomId: json['roomId'] as String,
-      userId: json['userId'] as String,
-      userName: json['userName'] as String,
-      userAvatar: json['userAvatar'] as String,
-      text: json['text'] as String,
+      roomId: roomId,
+      userId: json['userId'] as String? ?? '',
+      userName: json['userName'] as String? ?? 'Unknown',
+      userAvatar: json['userAvatar'] as String? ?? '',
+      text: json['text'] as String? ?? '',
       timestamp: (json['timestamp'] as dynamic)?.toDate() ?? DateTime.now(),
       hidden: json['hidden'] as bool? ?? false,
     );
