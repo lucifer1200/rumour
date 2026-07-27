@@ -1,247 +1,173 @@
-# Rumour - Anonymous Room-Code Chat App
+# Rumour
 
-An open-source Flutter application for anonymous, real-time messaging through room codes. Create or join chat rooms instantly without registration, get a random anonymous identity, and start chatting.
+An anonymous room-code chat app built with Flutter and Firebase. Users join or create chat rooms using short codes, get assigned a random identity, and chat in real time — no sign-up required.
 
-## ✨ Features
+## Features
 
-- **🔐 Anonymous Chat**: No account required, completely anonymous
-- **🎫 Room Codes**: Simple 4-6 character codes to join rooms  
-- **👤 Random Identities**: Auto-generated names and avatars from RandomUser.me API
-- **⚡ Real-time Messaging**: Live message sync via Firebase Cloud Firestore
-- **📱 Offline Support**: View cached messages even without internet
-- **🌙 Dark Mode**: Beautiful dark UI with lime green accents
-- **✨ Smooth Animations**: Polish transitions and message animations
-- **💾 Local Persistence**: Identities persist per device per room
+- **Anonymous Chat** — No account needed, fully anonymous
+- **Room Codes** — Create a room (auto-generates a 4–6 char code) or join by entering one
+- **Random Identities** — Each user gets a random name and avatar via RandomUser.me API
+- **Identity Persistence** — Your identity sticks per room per device (SharedPreferences)
+- **Real-time Messaging** — Live message sync via Firestore snapshot streams
+- **Offline Support** — Firestore's built-in offline cache keeps messages available
+- **Date Separators** — Messages grouped by date for readability
+- **Dark Theme** — Lime green (#B2E844) accent on dark backgrounds
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Frontend**: Flutter (Dart 3.9+)
-- **State Management**: Flutter Riverpod
-- **Backend**: Firebase Cloud Firestore
-- **APIs**: RandomUser.me for avatars
-- **Local Storage**: SharedPreferences
-- **Architecture**: Clean architecture (Services → Repositories → Providers → UI)
+| Layer | Choice |
+|-------|--------|
+| Framework | Flutter (Dart 3.9+) |
+| Backend | Firebase Cloud Firestore |
+| State Management | Bloc / flutter_bloc 8.x |
+| HTTP | `http` package (RandomUser.me API) |
+| Local Storage | SharedPreferences |
+| IDs | `uuid` package |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 lib/
-├── main.dart                           # App entry point
-├── models/                             # Data models
-│   ├── user.dart
-│   ├── room.dart
-│   ├── message.dart
-│   └── random_user.dart
-├── services/                           # Business logic
-│   ├── firestore_service.dart
-│   ├── random_user_service.dart
-│   └── local_storage_service.dart
-├── repositories/                       # Data access
-│   ├── user_repository.dart
-│   ├── room_repository.dart
-│   └── message_repository.dart
-├── providers/                          # State management (Riverpod)
-│   ├── services_provider.dart
-│   ├── repository_provider.dart
-│   ├── app_state_provider.dart
-│   └── message_provider.dart
-├── screens/                            # UI Screens
-│   ├── splash_screen.dart
-│   ├── join_room_screen.dart
-│   └── chat_screen.dart
-├── widgets/                            # Reusable widgets
-│   ├── message_bubble.dart
-│   ├── date_separator.dart
-│   ├── room_header.dart
-│   ├── message_input.dart
-│   └── loading_indicator.dart
-├── theme/                              # Design system
-│   ├── app_colors.dart
-│   ├── app_text_styles.dart
-│   └── app_theme.dart
-├── constants/
-│   └── app_constants.dart
-└── firebase_options.dart               # Firebase config
+├── main.dart                      # App entry, Firebase init, BlocProviders
+├── firebase_options.dart          # Firebase config
+│
+├── models/
+│   ├── user.dart                  # User (id, name, avatar, deviceId)
+│   ├── message.dart               # Message (text, timestamp, userId)
+│   ├── room.dart                  # Room (code, memberCount, lastMessage)
+│   └── random_user.dart           # RandomUser.me API response
+│
+├── services/
+│   ├── firestore_service.dart     # Firestore CRUD operations
+│   ├── random_user_service.dart   # RandomUser.me API + caching
+│   └── local_storage_service.dart # SharedPreferences wrapper
+│
+├── repositories/
+│   ├── room_repository.dart       # Room creation, joining, code generation
+│   ├── message_repository.dart    # Send messages, message stream
+│   └── user_repository.dart       # Get/create identity per room
+│
+├── blocs/
+│   ├── user_bloc.dart             # User identity lifecycle
+│   ├── room_bloc.dart             # Room create/join
+│   ├── chat_bloc.dart             # Real-time message stream + send
+│   └── theme_bloc.dart            # Dark/light toggle
+│
+├── screens/
+│   ├── join_room_screen.dart      # Home — enter code or create room
+│   └── chat_screen.dart           # Chat UI — messages, input, header
+│
+├── widgets/
+│   ├── message_bubble.dart        # Individual message card
+│   ├── date_separator.dart        # Date divider between groups
+│   ├── message_input.dart         # Text field + send button
+│   ├── room_header.dart           # Room info bar
+│   └── loading_indicator.dart     # Loading state
+│
+├── theme/
+│   ├── app_colors.dart            # Color constants
+│   ├── app_theme.dart             # ThemeData (dark + light)
+│   └── app_text_styles.dart       # Typography
+│
+└── constants/
+    └── app_constants.dart
 ```
 
-## 🚀 Getting Started
+## Firestore Schema
+
+```
+rooms/{roomId}
+├── code: string            # Join code (e.g. "A3KF")
+├── createdAt: timestamp
+├── memberCount: number
+└── lastMessage: string?
+
+messages/{roomId}/messages/{messageId}
+├── userId: string
+├── userName: string
+├── userAvatar: string      # Avatar URL
+├── text: string
+├── timestamp: timestamp    # Server timestamp
+└── hidden: boolean
+```
+
+## Architecture
+
+```
+Screens / Widgets  (UI)
+        │
+      Blocs        (State)
+        │
+   Repositories    (Business logic)
+        │
+     Services      (I/O)
+   ┌────┼────┐
+   ▼    ▼    ▼
+Firestore  API  SharedPrefs
+```
+
+- **Services** — raw I/O: Firestore reads/writes, HTTP calls, local storage
+- **Repositories** — business logic: code generation, identity creation, validation
+- **Blocs** — UI state: loading → loaded → error transitions
+- **Screens** — render UI, dispatch bloc events
+
+## Setup
 
 ### Prerequisites
 
-- Flutter SDK 3.9+
-- Dart 3.9+
-- Firebase account
-- Android SDK (for APK builds)
+- Flutter SDK 3.x
+- Firebase project with Firestore enabled
+- Android Studio / VS Code
 
-### Setup Instructions
+### Steps
 
-#### 1. Clone Repository
+1. Clone
+   ```bash
+   git clone https://github.com/lucifer1200/rumour.git
+   cd rumour
+   ```
 
-```bash
-git clone https://github.com/yourusername/rumour.git
-cd rumour
-```
+2. Install dependencies
+   ```bash
+   flutter pub get
+   ```
 
-#### 2. Firebase Project Setup
+3. Firebase setup
+   - Create a project at [console.firebase.google.com](https://console.firebase.google.com)
+   - Enable Cloud Firestore
+   - Download `google-services.json` → place in `android/app/`
+   - Update `lib/firebase_options.dart` with your config
 
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Create a new project named "rumour"
-3. Enable Cloud Firestore (Production mode, asia-south1 region recommended)
-4. Update Firestore Security Rules:
-```firestore
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /rooms/{roomId} {
-      allow read, write: if true;
-    }
-    match /messages/{roomId}/messages/{messageId} {
-      allow read, write: if true;
-    }
-    match /userIdentities/{docId} {
-      allow read, write: if true;
-    }
-  }
-}
-```
+4. Firestore rules (test mode)
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /{document=**} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```
 
-#### 3. Configure Firebase for Flutter
+5. Run
+   ```bash
+   flutter run
+   ```
 
-```bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-```
-
-#### 4. Install Dependencies
+## Build APK
 
 ```bash
-flutter pub get
-```
-
-#### 5. Run
-
-```bash
-flutter run
-```
-
-## 🗄️ Firestore Data Structure
-
-### `rooms` Collection
-```json
-{
-  "code": "ABC123",
-  "createdAt": "server_timestamp",
-  "memberCount": 5,
-  "lastMessage": "Hello everyone!"
-}
-```
-
-### `messages/{roomId}/messages` Subcollection
-```json
-{
-  "userId": "uuid",
-  "userName": "Brave Badger",
-  "userAvatar": "url",
-  "text": "Hello everyone!",
-  "timestamp": "server_timestamp",
-  "hidden": false
-}
-```
-
-### `userIdentities` Collection
-```json
-{
-  "roomId": "doc-id",
-  "deviceId": "device-id",
-  "userId": "uuid",
-  "name": "Brave Badger",
-  "avatar": "url",
-  "createdAt": "timestamp",
-  "lastAccessed": "timestamp"
-}
-```
-
-## 🏗️ Architecture
-
-**Layer Diagram:**
-```
-UI Layer (Screens & Widgets)
-    ↓ Riverpod Providers
-State Management
-    ↓
-Repositories (Data Access)
-    ↓
-Services (Business Logic)
-    ↓
-Firebase, APIs, SharedPreferences
-```
-
-**Key Patterns:**
-- **Riverpod**: Reactive state management
-- **Repository Pattern**: Data access abstraction
-- **Service Layer**: Encapsulated business logic
-- **Provider Dependencies**: Hierarchical and testable
-
-## 📲 Building Release APK
-
-```bash
-# Generate signing key (first time)
-keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias rumour
-
-# Build release APK
 flutter build apk --release
-
-# Output: build/app/outputs/flutter-app/release/app-release.apk
 ```
 
-## 📋 Testing Checklist
+Output: `build/app/outputs/flutter-apk/app-release.apk`
 
-- [ ] Create new room with generated identity
-- [ ] Join existing room with code
-- [ ] Send and receive messages in real-time
-- [ ] Date separators show correctly
-- [ ] Offline mode shows cached messages
-- [ ] Reconnect syncs messages
-- [ ] Long messages wrap properly
-- [ ] Dark mode colors are accessible
-- [ ] High message volume doesn't crash
+## How It Works
 
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Firebase not connecting | Check `firebase_options.dart`, verify Firestore rules |
-| Messages not appearing | Verify room ID, check Firestore console |
-| Random user API failing | Check internet, API is cached for 1hr |
-| App crashes on startup | Run `flutter pub get` and `flutter doctor` |
-
-## 🔐 Security Notes
-
-⚠️ **This app uses anonymous access.** For production:
-- Implement Firebase Authentication
-- Add message encryption
-- Set rate limiting
-- Enable moderation
-
-## 🗺️ Future Roadmap
-
-- [ ] Push notifications
-- [ ] Typing indicators
-- [ ] Message reactions (emoji)
-- [ ] Message search
-- [ ] Room history
-- [ ] Direct messages
-- [ ] Image/media sharing
-- [ ] End-to-end encryption
-
-## 📄 License
-
-MIT License - See LICENSE file
-
-## 🎥 Demo Video
-
-[Link to demo video will be added]
-
----
-
-**Built with ❤️ using Flutter**
+1. Open app → JoinRoomScreen
+2. **Create room** → generates random code, creates Firestore doc
+3. **Join room** → looks up room by code
+4. **Identity assigned** → fetches random name/avatar from RandomUser.me, saves to SharedPreferences keyed by roomId
+5. **Chat** → messages written to Firestore subcollection, streamed back in real time
+6. **Rejoin** → same room + same device = same identity (from local storage)
